@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, FlatList } from 'react-native'
+import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native'
 
 import Header from '../components/Header'
 import EnvironmentButton from '../components/EnvironmentButton'
+import PlantCardPrimary from '../components/PlantCardPrimary'
+import Load from '../components/Load'
 
 import colors from '../styles/colors'
 import fonts from '../styles/fonts'
@@ -14,17 +16,79 @@ interface EnvironmentsProps {
   title: string;
 }
 
+interface PlantProps {
+  id: number;
+  name: string;
+  about: string;
+  water_tips: string;
+  photo: string;
+  environments: string[];
+  frequency: {
+    times: number;
+    repeat_every: string;
+  }
+}
+
 export default function PlantSelect() {
   const [environments, setEnvironments] = useState<EnvironmentsProps[]>([]);
+  const [environmentSelected, setEnvironmentSelected] = useState('all');
+
+  const [plants, setPlants] = useState<PlantProps[]>([]);
+  const [filteredPlants, setFilteredPlants] = useState<PlantProps[]>([]);
+
+  const [loading, setLoading] = useState(true);
+
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingAll, setLoadingAll] = useState(false);
 
   useEffect(() => {
-    async function fetchEnvironments() {
-      const { data } = await api.get('plants_environments');
-      setEnvironments([{ key: 'all', title: 'Todos' }, ...data]);
+    fetchEnvironments();
+    fetchPlants();
+  }, []);
+
+  async function fetchEnvironments() {
+    const { data } = await api.get('plants_environments?_sort=title&_order=asc');
+    setEnvironments([{ key: 'all', title: 'Todos' }, ...data]);
+  }
+
+  async function fetchPlants() {
+    const { data } = await api.get(`plants?_sort=name&_order=asc&_page=${page}&_limit=8`);
+    if(!data)
+      return setLoading(true);
+
+    if(page > 1) {
+      setPlants(oldValue => [...oldValue, ...data]);
+      setFilteredPlants(oldValue => [...oldValue, ...data]);
+    } else {
+      setPlants(data);
+      setFilteredPlants(data);
     }
 
-    fetchEnvironments();
-  }, []);
+    setLoading(false);
+    setLoadingMore(false);
+  }
+
+  function handleFetchMore(distance: number) {
+    if(distance < 1) return;
+
+    setLoadingMore(true);
+    setPage(oldValue => oldValue + 1)
+    fetchPlants();
+  }
+
+  function handleEnvironmentSelected(environment: string) {
+    setEnvironmentSelected(environment);
+    if(environment == 'all')
+      return setFilteredPlants(plants);
+
+    const filtered = plants.filter(plant => plant.environments.includes(environment));
+    setFilteredPlants(filtered);
+  }
+
+  
+  if(loading)
+    return <Load />
 
   return (
     <View style={styles.container}>
@@ -39,11 +103,30 @@ export default function PlantSelect() {
         <FlatList
           data={environments}
           renderItem={({ item }) => (
-            <EnvironmentButton title={item.title} />
+            <EnvironmentButton 
+              title={item.title}
+              active={item.key == environmentSelected}
+              onPress={() => handleEnvironmentSelected(item.key)}
+            />
           )}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.environmentList}
+        />
+      </View>
+
+      <View style={styles.plants}>
+        <FlatList
+          data={filteredPlants}
+          renderItem={({ item }) => (
+            <PlantCardPrimary data={item} />
+          )}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.plantList}
+          numColumns={2}
+          onEndReachedThreshold={0.1}
+          onEndReached={({ distanceFromEnd }) => handleFetchMore(distanceFromEnd)}
+          ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.green} /> : <></>}
         />
       </View>
     </View>
@@ -77,5 +160,13 @@ const styles = StyleSheet.create({
     paddingBottom: 5,
     marginLeft: 32,
     marginVertical: 30
+  },
+  plants: {
+    flex: 1,
+    paddingHorizontal: 32,
+    justifyContent: 'center'
+  },
+  plantList: {
+    paddingBottom: 50
   }
 })

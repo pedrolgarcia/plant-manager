@@ -12,7 +12,7 @@ interface EnvironmentButtonProps extends RectButtonProps {
 
 export default function EnvironmentButton({ title, active = false, ...rest }: EnvironmentButtonProps) {
   return (
-    <RectButton {...rest} style={[styles.container, active && styles.containerActive]} activeOpacity={0.7}>
+    <RectButton {...rest} style={[styles.container, active && styles.containerActive]}>
       <Text style={[styles.text, active && styles.textActive]}>{title}</Text>
     </RectButton>
   )
@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 12,
-    marginRight: 5
+    marginHorizontal: 5
   },
   containerActive: {
     backgroundColor: colors.green_light
