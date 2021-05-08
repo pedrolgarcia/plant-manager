@@ -40,7 +40,6 @@ export default function PlantSelect() {
 
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [loadingAll, setLoadingAll] = useState(false);
 
   useEffect(() => {
     fetchEnvironments();
@@ -102,8 +101,9 @@ export default function PlantSelect() {
       <View>
         <FlatList
           data={environments}
+          keyExtractor={item => String(item.key)}
           renderItem={({ item }) => (
-            <EnvironmentButton 
+            <EnvironmentButton
               title={item.title}
               active={item.key == environmentSelected}
               onPress={() => handleEnvironmentSelected(item.key)}
@@ -118,6 +118,7 @@ export default function PlantSelect() {
       <View style={styles.plants}>
         <FlatList
           data={filteredPlants}
+          keyExtractor={item => String(item.id)}
           renderItem={({ item }) => (
             <PlantCardPrimary data={item} />
           )}

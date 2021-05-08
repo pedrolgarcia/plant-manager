@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { SafeAreaView, View, KeyboardAvoidingView, Text, StyleSheet, TextInput, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import Button from '../components/Button'
 
@@ -9,7 +10,7 @@ import fonts from '../styles/fonts'
 
 export default function UserIdentification() {
   const [isFocused, setIsFocused] = useState(false);
-  const [name, setName] = useState<string>();
+  const [name, setName] = useState<string>('');
 
   const navigation = useNavigation();
 
@@ -25,7 +26,8 @@ export default function UserIdentification() {
     setName(value);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    await AsyncStorage.setItem('@plantmanager:user', name);
     navigation.navigate('Confirmation');
   }
 
@@ -49,7 +51,7 @@ export default function UserIdentification() {
             />
 
             <View style={styles.footer}>
-              <Button title="Confirmar" onPress={handleSubmit} />
+              <Button title="Confirmar" disabled={!!!name} onPress={handleSubmit} />
             </View>
 
           </View>
